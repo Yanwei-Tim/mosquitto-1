@@ -39,3 +39,13 @@ Fixes: [![Travis Build Status (fixes)](https://travis-ci.org/eclipse/mosquitto.s
     127.0.0.1:6379> HKEYS mqtt
 
 Hash里的key即MQTT的Client
+
+日志如下：
+
+    1471869172: New connection from 10.0.2.217 on port 1883.
+    1471869172: New client connected from 10.0.2.217 as abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff (c1, k60).
+    1471869172: Updating client abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff to online
+    1471869172: Sending CONNACK to abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff (0, 0)
+    1471869207: Socket error on client abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff, disconnecting.
+    1471869207: Updating client abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff to offline
+
