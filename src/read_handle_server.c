@@ -525,6 +525,12 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
 				_mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "New client connected from %s as %s (c%d, k%d).", context->address, client_id, clean_session, context->keepalive);
 			}
 		}
+                redisReply *redis_reply;
+                redis_reply = redisCommand(db->redis_context, "HSET mqtt %s 1", client_id);
+                
+                _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Updating client %s to online", client_id);
+                freeReplyObject(redis_reply);
+                
 	}
 
 	context->id = client_id;

@@ -47,6 +47,7 @@ Contributors:
 #  include <libwebsockets.h>
 #endif
 
+
 #include <mosquitto_broker.h>
 #include <memory_mosq.h>
 #include "util_mosq.h"
@@ -214,6 +215,10 @@ void handle_sigusr2(int signal)
 int main(int argc, char *argv[])
 {
 	mosq_sock_t *listensock = NULL;
+        redisContext *redis_context;
+        //redisReply *redis_reply;
+        struct timeval timeout = { 1, 500000 };
+        
 	int listensock_count = 0;
 	int listensock_index = 0;
 	struct mqtt3_config config;
@@ -263,6 +268,22 @@ int main(int argc, char *argv[])
 	rc = mqtt3_config_parse_args(&config, argc, argv);
 	if(rc != MOSQ_ERR_SUCCESS) return rc;
 	int_db.config = &config;
+        
+        redis_context = redisConnectWithTimeout(config.redis_host, config.redis_port, timeout);
+        _mosquitto_log_printf(NULL, MOSQ_LOG_INFO, "Connecting to redis %s:%d", config.redis_host, config.redis_port);
+        
+        if (redis_context == NULL || redis_context->err) {
+            if (redis_context) {
+                _mosquitto_log_printf(NULL, MOSQ_LOG_ERR, "Connection error: %s", redis_context->errstr);
+                redisFree(redis_context);
+            } else {
+                _mosquitto_log_printf(NULL, MOSQ_LOG_ERR, "Connection error: can't allocate redis context");
+            }
+            exit(1);
+        }
+        
+        _mosquitto_log_printf(NULL, MOSQ_LOG_INFO, "Connected to redis %s:%d", config.redis_host, config.redis_port);
+        int_db.redis_context = redis_context;
 
 	if(config.daemon){
 		mosquitto__daemonise();
@@ -380,6 +401,8 @@ int main(int argc, char *argv[])
 
 	run = 1;
 	rc = mosquitto_main_loop(&int_db, listensock, listensock_count, listener_max);
+        
+        redisFree(redis_context);
 
 	_mosquitto_log_printf(NULL, MOSQ_LOG_INFO, "mosquitto version %s terminating", VERSION);
 	mqtt3_log_close(&config);

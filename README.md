@@ -22,3 +22,18 @@ Mosquitto was written by Roger Light <roger@atchoo.org>
 Master: [![Travis Build Status (master)](https://travis-ci.org/eclipse/mosquitto.svg?branch=master)](https://travis-ci.org/eclipse/mosquitto)
 Develop: [![Travis Build Status (develop)](https://travis-ci.org/eclipse/mosquitto.svg?branch=develop)](https://travis-ci.org/eclipse/mosquitto)
 Fixes: [![Travis Build Status (fixes)](https://travis-ci.org/eclipse/mosquitto.svg?branch=fixes)](https://travis-ci.org/eclipse/mosquitto)
+
+## 用户上下线
+
+增加用户上线下线状态，数据存储使用Redis，已经将hiredis整合在代码里。
+
+配置项：
+    
+    redis_host 127.0.0.1
+    redis_port 6379
+
+状态存放在Redis中key为mqtt，使用Hash存储
+
+    127.0.0.1:6379> HKEYS mqtt
+    1) "test"
+    127.0.0.1:6379> HKEYS mqtt
