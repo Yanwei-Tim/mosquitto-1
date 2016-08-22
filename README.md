@@ -37,3 +37,5 @@ Fixes: [![Travis Build Status (fixes)](https://travis-ci.org/eclipse/mosquitto.s
     127.0.0.1:6379> HKEYS mqtt
     1) "test"
     127.0.0.1:6379> HKEYS mqtt
+
+Hash里的key即MQTT的Client
