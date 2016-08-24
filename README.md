@@ -53,5 +53,11 @@ Hash里的key即MQTT的Client
 
 在传输消息中如果标注了QoS为2时，会通过获取json数据格式中expire_at字段来判断消息是否过期，如果过期的话会忽略推送消息。
 
+    1472023902: payload: {
+    	"expire_at":	1472023605,
+    	"message":	"hello!"
+    }
+    1472023902: Expire at: 1472023605, Current timestamp: 1472023902
+    1472023902: The message has already expired!
 
 
