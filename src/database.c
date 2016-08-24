@@ -23,6 +23,7 @@ Contributors:
 #include <memory_mosq.h>
 #include <send_mosq.h>
 #include <time_mosq.h>
+#include <cJSON/cJSON.h>
 
 static int max_inflight = 20;
 static int max_queued = 100;
@@ -807,6 +808,34 @@ int mqtt3_db_message_release(struct mosquitto_db *db, struct mosquitto *context,
 	}
 }
 
+/**
+ * 监测消息是否过期
+ * @param mosq :mosquitto context
+ * @param payloadlen : 消息长度
+ * @param payload : 消息内容
+ * @return 1 已经过期， 0 未过期
+ */
+int is_expired(struct mosquitto *mosq, uint32_t payloadlen, const void *payload) 
+{
+   cJSON * root = cJSON_Parse(payload);
+   if (root) {
+       char *rendered = cJSON_Print(root);
+       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
+       cJSON *expire_at = cJSON_GetObjectItem(root, "expire_at");
+       if (expire_at) {
+           int current_timestamp = (int)time(NULL); 
+           _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Expire at: %d, Current timestamp: %d", expire_at->valueint, current_timestamp);
+           if (expire_at->valueint <= current_timestamp) {
+               cJSON_Delete(root);
+               _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "The message has already expired!");
+               return 1;               
+           }
+       }
+   }
+   cJSON_Delete(root);
+   return 0;
+}
+
 int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 {
 	int rc;
@@ -819,6 +848,7 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 	uint32_t payloadlen;
 	const void *payload;
 	int msg_count = 0;
+        int expired = 0;
 
 	if(!context || context->sock == INVALID_SOCKET
 			|| (context->state == mosq_cs_connected && !context->id)){
@@ -867,16 +897,24 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 					break;
 
 				case mosq_ms_publish_qos2:
-					rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
-					if(!rc){
-						tail->timestamp = mosquitto_time();
-						tail->dup = 1; /* Any retry attempts are a duplicate. */
-						tail->state = mosq_ms_wait_for_pubrec;
-					}else{
-						return rc;
-					}
-					last = tail;
-					tail = tail->next;
+                                        expired = is_expired(context, payloadlen, payload);
+                                        if (!expired) {
+                                            rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
+                                            if(!rc){
+                                                    tail->timestamp = mosquitto_time();
+                                                    tail->dup = 1; /* Any retry attempts are a duplicate. */
+                                                    tail->state = mosq_ms_wait_for_pubrec;
+                                            }else{
+                                                    return rc;
+                                            }
+                                            last = tail;
+                                            tail = tail->next;
+                                            
+                                        } else {
+                                            _message_remove(db, context, &tail, last);
+                                        }
+                                        
+					
 					break;
 				
 				case mosq_ms_send_pubrec:

@@ -48,4 +48,10 @@ Hash里的key即MQTT的Client
     1471869172: Sending CONNACK to abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff (0, 0)
     1471869207: Socket error on client abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff, disconnecting.
     1471869207: Updating client abc7a4cc3534b8e56b877b4cd0c1e3a0e532615fdf91de5ac79c895011f002ff to offline
+    
+## 过期时间
+
+在传输消息中如果标注了QoS为2时，会通过获取json数据格式中expire_at字段来判断消息是否过期，如果过期的话会忽略推送消息。
+
+
 

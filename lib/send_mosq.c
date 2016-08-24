@@ -17,6 +17,7 @@ Contributors:
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef WITH_BROKER
 #include <mosquitto_broker.h>
@@ -34,6 +35,7 @@ extern uint64_t g_pub_bytes_sent;
 #include <send_mosq.h>
 #include <time_mosq.h>
 #include <util_mosq.h>
+
 
 int _mosquitto_send_pingreq(struct mosquitto *mosq)
 {
@@ -172,7 +174,8 @@ int _mosquitto_send_publish(struct mosquitto *mosq, uint16_t mid, const char *to
 #else
 	_mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBLISH (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", mosq->id, dup, qos, retain, mid, topic, (long)payloadlen);
 #endif
-
+        
+        
 	return _mosquitto_send_real_publish(mosq, mid, topic, payloadlen, payload, qos, retain, dup);
 }
 

@@ -20,7 +20,7 @@ MOSQ_OBJS=mosquitto.o \
 		  util_mosq.o \
 		  will_mosq.o
 
-all : libmosquitto.so.${SOVERSION} libmosquitto.a
+all : CJSON libmosquitto.so.${SOVERSION} libmosquitto.a
 	$(MAKE) -C cpp
 
 install : all
@@ -41,9 +41,12 @@ reallyclean : clean
 clean :
 	-rm -f *.o libmosquitto.so.${SOVERSION} libmosquitto.so libmosquitto.a
 	$(MAKE) -C cpp clean
+	
+CJSON :
+	$(MAKE) -C cJSON
 
 libmosquitto.so.${SOVERSION} : ${MOSQ_OBJS}
-	${CROSS_COMPILE}$(CC) -shared $(LIB_LDFLAGS) $^ -o $@ ${LIB_LIBS}
+	${CROSS_COMPILE}$(CC) -shared $(LIB_LDFLAGS) $^ -o $@ ${LIB_LIBS} cJSON/libcjson.a -lm
 
 libmosquitto.a : ${MOSQ_OBJS}
 	${CROSS_COMPILE}$(AR) cr $@ $^
@@ -72,7 +75,9 @@ read_handle_shared.o : read_handle_shared.c read_handle.h
 	${CROSS_COMPILE}$(CC) $(LIB_CFLAGS) -c $< -o $@
 
 send_mosq.o : send_mosq.c send_mosq.h
-	${CROSS_COMPILE}$(CC) $(LIB_CFLAGS) -c $< -o $@
+	${CROSS_COMPILE}$(CC) $(LIB_CFLAGS) -c $< -o $@ 
+	
+	 
 
 send_client_mosq.o : send_client_mosq.c send_mosq.h
 	${CROSS_COMPILE}$(CC) $(LIB_CFLAGS) -c $< -o $@
