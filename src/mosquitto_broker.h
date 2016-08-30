@@ -150,6 +150,7 @@ struct mqtt3_config {
 	int auth_option_count;
         char *redis_host;
         int redis_port;
+        char *redis_auth;
 };
 
 struct _mosquitto_subleaf {
