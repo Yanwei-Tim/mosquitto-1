@@ -284,13 +284,20 @@ int main(int argc, char *argv[])
         
         _mosquitto_log_printf(NULL, MOSQ_LOG_INFO, "Connected to redis %s:%d", config.redis_host, config.redis_port);
         
+        redisReply *redis_reply;
+        
         if (config.redis_auth) {
-            redisReply *redis_reply;
             redis_reply = redisCommand(redis_context, "AUTH %s", config.redis_auth);
 
             _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "The password of Redis: %s", config.redis_auth);
             freeReplyObject(redis_reply);
         }
+        
+        // 清除原始数据
+        redis_reply = redisCommand(redis_context, "HDEL mqtt");
+
+        _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cleaning last data");
+        freeReplyObject(redis_reply);
         
         int_db.redis_context = redis_context;
         
