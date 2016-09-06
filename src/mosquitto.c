@@ -293,11 +293,17 @@ int main(int argc, char *argv[])
             freeReplyObject(redis_reply);
         }
         
+        _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cleaning last data");
+        
         // 清除原始数据
         redis_reply = redisCommand(redis_context, "HDEL mqtt");
-
-        _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cleaning last data");
+;
         freeReplyObject(redis_reply);
+        
+        redis_reply = redisCommand(redis_context, "HDEL mqtt_cancelled");
+        freeReplyObject(redis_reply);
+        
+        
         
         int_db.redis_context = redis_context;
         
