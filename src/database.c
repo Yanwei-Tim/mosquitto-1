@@ -894,7 +894,7 @@ void set_cancelled(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t pay
        if (transaction_id && cmd) {
            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "CMD: %s", cmd->valuestring);
            
-           if (strcmp(cmd->valuestring, "doorCallEnd") == 0 || strcmp(cmd->valuestring, "appCallEnd")) {
+           if (strcmp(cmd->valuestring, "hangUpCall") == 0) {
                redisReply *redis_reply;
                 redis_reply = redisCommand(db->redis_context, "HSET mqtt_cancelled %s 1", transaction_id->valuestring);
                 _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is  set to cancelled", transaction_id->valuestring);
