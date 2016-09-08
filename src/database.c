@@ -854,19 +854,23 @@ int is_cancelled(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t paylo
 //       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
        
        cJSON *transaction_id = cJSON_GetObjectItem(root, "transactionID");
-       if (transaction_id) {
+       cJSON *cmd = cJSON_GetObjectItem(root, "cmd");
+       if (transaction_id && cmd) {
            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s", transaction_id->valuestring);
+           _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "CMD: %s", cmd->valuestring);
            
-            redisReply *redis_reply;
-            redis_reply = redisCommand(db->redis_context, "HGET mqtt_cancelled %s", transaction_id->valuestring);
-            if (redis_reply->str) {
-                _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cancelled reply: %s", redis_reply->str);
-                if (redis_reply && strcmp(redis_reply->str, "1") == 0) {
-                    _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is cancelled", transaction_id->valuestring);
-                    result = 1;
+           if (strcmp(cmd->valuestring, "makeCall") == 0) {
+                redisReply *redis_reply;
+                redis_reply = redisCommand(db->redis_context, "HGET mqtt_cancelled %s", transaction_id->valuestring);
+                if (redis_reply->str) {
+                    _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cancelled reply: %s", redis_reply->str);
+                    if (redis_reply && strcmp(redis_reply->str, "1") == 0) {
+                        _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is cancelled", transaction_id->valuestring);
+                        result = 1;
+                    }
                 }
-            }
-            freeReplyObject(redis_reply);
+                freeReplyObject(redis_reply);
+           }
        }
    }
    cJSON_Delete(root);

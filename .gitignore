@@ -42,3 +42,4 @@ test/lib/cpp/*.test
 build/
 dist/
 nbproject/private/configurations.xml
+nbproject
