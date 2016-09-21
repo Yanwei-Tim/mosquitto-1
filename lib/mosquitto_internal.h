@@ -147,6 +147,9 @@ struct mosquitto_message_all{
 	struct mosquitto_message msg;
 };
 
+/**
+ * 保存一个客户端连接的所有信息，例如用户名、密码、用户ID、向该客户端发送的消息等。
+ */
 struct mosquitto {
 	mosq_sock_t sock;
 #ifndef WITH_BROKER
@@ -209,7 +212,7 @@ struct mosquitto {
 	struct _mqtt3_listener *listener;
 	time_t disconnect_t;
 	struct _mosquitto_packet *out_packet_last;
-	struct _mosquitto_subhier **subs;
+	struct _mosquitto_subhier **subs;       // 保存了订阅树的总树根
 	int sub_count;
 	int pollfd_index;
 #  ifdef WITH_WEBSOCKETS

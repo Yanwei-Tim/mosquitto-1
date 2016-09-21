@@ -27,9 +27,129 @@ Contributors:
 #include <send_mosq.h>
 #include <util_mosq.h>
 
+#include "cJSON/cJSON.h"
+
 #ifdef WITH_SYS_TREE
 extern uint64_t g_pub_bytes_received;
 #endif
+
+static int max_inflight = 20;
+
+static void _message_remove(struct mosquitto_db *db, struct mosquitto *context, struct mosquitto_client_msg **msg, struct mosquitto_client_msg *last)
+{
+	int i;
+	struct mosquitto_client_msg *tail;
+
+	if(!context || !msg || !(*msg)){
+		return;
+	}
+
+	if((*msg)->store){
+		mosquitto__db_msg_store_deref(db, &(*msg)->store);
+	}
+	if(last){
+		last->next = (*msg)->next;
+		if(!last->next){
+			context->last_msg = last;
+		}
+	}else{
+		context->msgs = (*msg)->next;
+		if(!context->msgs){
+			context->last_msg = NULL;
+		}
+	}
+	context->msg_count--;
+	if((*msg)->qos > 0){
+		context->msg_count12--;
+	}
+	_mosquitto_free(*msg);
+	if(last){
+		*msg = last->next;
+	}else{
+		*msg = context->msgs;
+	}
+	tail = context->msgs;
+	i = 0;
+	while(tail && tail->state == mosq_ms_queued && i<max_inflight){
+		if(tail->direction == mosq_md_out){
+			switch(tail->qos){
+				case 0:
+					tail->state = mosq_ms_publish_qos0;
+					break;
+				case 1:
+					tail->state = mosq_ms_publish_qos1;
+					break;
+				case 2:
+					tail->state = mosq_ms_publish_qos2;
+					break;
+			}
+		}else{
+			if(tail->qos == 2){
+				tail->state = mosq_ms_send_pubrec;
+			}
+		}
+
+		tail = tail->next;
+	}
+}
+
+/**
+ * 是否需要移除clientID与token绑定
+ * @param db : mosquitto db
+ * @param mosq
+ * @param payloadlen
+ * @param payload
+ * @return 
+ */
+int unsubscribe_topic(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t payloadlen, const void *payload) 
+{
+   cJSON * root = cJSON_Parse(payload);
+   char *k_client_id = NULL; 
+   struct mosquitto *context = NULL;
+   struct mosquitto_client_msg *tail, *last = NULL;
+   
+   
+   _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "called is_removed!!!!");
+    
+   if (root) {
+       char *rendered = cJSON_Print(root);
+       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
+       
+       cJSON *clientids = cJSON_GetObjectItem(root, "clientids");
+       cJSON *topic = cJSON_GetObjectItem(root, "topic");
+       
+       if (clientids) {
+            int i;
+           
+            for (i = 0 ; i < cJSON_GetArraySize(clientids) ; i++)
+            {
+                cJSON * clientid = cJSON_GetArrayItem(clientids, i);
+                k_client_id = _mosquitto_strdup(clientid->valuestring);
+                HASH_FIND(hh_id, db->contexts_by_id, k_client_id, strlen(k_client_id), context);
+                
+                if (context) {
+                    _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Client ID: %s", context->id);
+                    mqtt3_sub_remove(db, context, topic->valuestring, &db->subs);
+                    
+                    tail = context->msgs;
+                    while(tail){
+                        if (!strcmp(tail->store->topic, topic->valuestring)) {
+                             _message_remove(db, context, &tail, last);
+                             break;
+                        }
+                        last = tail;
+                        tail = tail->next;
+                    }
+                }
+                
+                _mosquitto_free(k_client_id);
+            }
+       }
+   }
+   cJSON_Delete(root);
+   return 0;
+}
+
 
 int mqtt3_packet_handle(struct mosquitto_db *db, struct mosquitto *context)
 {
@@ -215,7 +335,16 @@ int mqtt3_handle_publish(struct mosquitto_db *db, struct mosquitto *context)
 	}
 
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received PUBLISH from %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", context->id, dup, qos, retain, mid, topic, (long)payloadlen);
-	if(qos > 0){
+	
+        if (!strcmp(topic, "UNSUBSRIBE")) {
+            unsubscribe_topic(db, context, payloadlen, payload);
+            _mosquitto_free(topic);
+            if(payload) _mosquitto_free(payload);
+            return rc;
+        }
+        
+        
+        if(qos > 0){
 		mqtt3_db_message_store_find(context, mid, &stored);
 	}
 	if(!stored){
@@ -237,11 +366,13 @@ int mqtt3_handle_publish(struct mosquitto_db *db, struct mosquitto *context)
 			if(_mosquitto_send_puback(context, mid)) rc = 1;
 			break;
 		case 2:
-			if(!dup){
+                        
+			if(!dup){                                
 				res = mqtt3_db_message_insert(db, context, mid, mosq_md_in, qos, retain, stored);
 			}else{
 				res = 0;
 			}
+                        
 			/* mqtt3_db_message_insert() returns 2 to indicate dropped message
 			 * due to queue. This isn't an error so don't disconnect them. */
 			if(!res){

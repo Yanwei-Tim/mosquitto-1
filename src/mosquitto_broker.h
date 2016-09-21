@@ -156,7 +156,7 @@ struct mqtt3_config {
 struct _mosquitto_subleaf {
 	struct _mosquitto_subleaf *prev;
 	struct _mosquitto_subleaf *next;
-	struct mosquitto *context;
+	struct mosquitto *context;              // 表示一个订阅客户端
 	int qos;
 };
 
@@ -164,7 +164,7 @@ struct _mosquitto_subhier {
 	struct _mosquitto_subhier *parent;
 	struct _mosquitto_subhier *children;
 	struct _mosquitto_subhier *next;
-	struct _mosquitto_subleaf *subs;
+	struct _mosquitto_subleaf *subs;        //该成员指向订阅列表
 	char *topic;
 	struct mosquitto_msg_store *retained;
 };

@@ -808,6 +808,8 @@ int mqtt3_db_message_release(struct mosquitto_db *db, struct mosquitto *context,
 	}
 }
 
+
+
 /**
  * 监测消息是否过期
  * @param mosq :mosquitto context
@@ -936,6 +938,9 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 
 	tail = context->msgs;
 	while(tail){
+                _mosquitto_log_printf(context, MOSQ_LOG_DEBUG, "Sending msg!!!");
+            
+            
 		if(tail->direction == mosq_md_in){
 			msg_count++;
 		}
@@ -947,6 +952,7 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 			qos = tail->qos;
 			payloadlen = tail->store->payloadlen;
 			payload = tail->store->payload;
+                        
 
 			switch(tail->state){
 				case mosq_ms_publish_qos0:
