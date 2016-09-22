@@ -109,17 +109,17 @@ int unsubscribe_topic(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t 
    struct mosquitto_client_msg *tail, *last = NULL;
    
    
-   _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "called is_removed!!!!");
+   _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "unscribe is called!!!!");
     
    if (root) {
        char *rendered = cJSON_Print(root);
        _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
        
        cJSON *clientids = cJSON_GetObjectItem(root, "clientids");
-       cJSON *topic = cJSON_GetObjectItem(root, "topic");
+       cJSON *topics = cJSON_GetObjectItem(root, "topics");
        
-       if (clientids) {
-            int i;
+       if (clientids && topics) {
+            int i, j;
            
             for (i = 0 ; i < cJSON_GetArraySize(clientids) ; i++)
             {
@@ -129,17 +129,31 @@ int unsubscribe_topic(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t 
                 
                 if (context) {
                     _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Client ID: %s", context->id);
-                    mqtt3_sub_remove(db, context, topic->valuestring, &db->subs);
                     
-                    tail = context->msgs;
-                    while(tail){
-                        if (!strcmp(tail->store->topic, topic->valuestring)) {
-                             _message_remove(db, context, &tail, last);
-                             break;
-                        }
-                        last = tail;
-                        tail = tail->next;
+                    for (j = 0; j < cJSON_GetArraySize(topics); j++) {
+                        cJSON* topic = cJSON_GetArrayItem(topics, j);
+                        _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Unsubscribe topic [%s]", topic->valuestring);
+
+                        mqtt3_sub_remove(db, context, topic->valuestring, &db->subs);
                     }
+                    
+                    for (j = 0; j < cJSON_GetArraySize(topics); j++) {
+                        cJSON* topic = cJSON_GetArrayItem(topics, j);
+                        _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Remove the message of [%s]", topic->valuestring);
+                        tail = context->msgs;
+                        while(tail){
+                            if (!strcmp(tail->store->topic, topic->valuestring)) {
+                                _message_remove(db, context, &tail, last);
+                                break;
+                            }
+                          
+                            last = tail;
+                            tail = tail->next;
+                        }
+                        
+                    }
+                    
+                    
                 }
                 
                 _mosquitto_free(k_client_id);
@@ -336,7 +350,7 @@ int mqtt3_handle_publish(struct mosquitto_db *db, struct mosquitto *context)
 
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received PUBLISH from %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", context->id, dup, qos, retain, mid, topic, (long)payloadlen);
 	
-        if (!strcmp(topic, "UNSUBSRIBE")) {
+        if (!strcmp(topic, "UNSUBSCRIBE")) {
             unsubscribe_topic(db, context, payloadlen, payload);
             _mosquitto_free(topic);
             if(payload) _mosquitto_free(payload);
