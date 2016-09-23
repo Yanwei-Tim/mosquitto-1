@@ -109,7 +109,7 @@ int unsubscribe_topic(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t 
    struct mosquitto_client_msg *tail, *last = NULL;
    
    
-   _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "unscribe is called!!!!");
+   _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Unsubscribe is called!!!!");
     
    if (root) {
        char *rendered = cJSON_Print(root);
