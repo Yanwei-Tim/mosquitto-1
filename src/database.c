@@ -824,7 +824,7 @@ int is_expired(struct mosquitto *mosq, uint32_t payloadlen, const void *payload)
 //       char *rendered = cJSON_Print(root);
 //       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
        
-       cJSON *expire_at = cJSON_GetObjectItem(root, "expireAt");
+       cJSON *expire_at = cJSON_GetObjectItem(root, "expiredAt");
        if (expire_at) {
            int current_timestamp = (int)time(NULL); 
            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Expire at: %d, Current timestamp: %d", expire_at->valueint, current_timestamp);
