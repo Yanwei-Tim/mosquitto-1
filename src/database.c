@@ -938,8 +938,6 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 
 	tail = context->msgs;
 	while(tail){
-                _mosquitto_log_printf(context, MOSQ_LOG_DEBUG, "Sending msg!!!");
-            
             
 		if(tail->direction == mosq_md_in){
 			msg_count++;
