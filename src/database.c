@@ -864,16 +864,18 @@ int is_cancelled(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t paylo
            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "CMD: %s", cmd->valuestring);
            
            if (strcmp(cmd->valuestring, "makeCall") == 0) {
-                redisReply *redis_reply;
-                redis_reply = redisCommand(db->redis_context, "HGET mqtt_cancelled %s", transaction_id->valuestring);
-                if (redis_reply->str) {
-                    _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cancelled reply: %s", redis_reply->str);
-                    if (redis_reply && strcmp(redis_reply->str, "1") == 0) {
-                        _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is cancelled", transaction_id->valuestring);
-                        result = 1;
+               if (!db->redis_context) {
+                    redisReply *redis_reply;
+                    redis_reply = redisCommand(db->redis_context, "HGET mqtt_cancelled %s", transaction_id->valuestring);
+                    if (redis_reply->str) {
+                        _mosquitto_log_printf(NULL, MOSQ_LOG_NOTICE, "Cancelled reply: %s", redis_reply->str);
+                        if (redis_reply && strcmp(redis_reply->str, "1") == 0) {
+                            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is cancelled", transaction_id->valuestring);
+                            result = 1;
+                        }
                     }
-                }
-                freeReplyObject(redis_reply);
+                    freeReplyObject(redis_reply);
+               }
            }
        }
    }
