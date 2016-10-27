@@ -35,6 +35,39 @@ extern uint64_t g_pub_bytes_received;
 
 static int max_inflight = 20;
 
+/**
+ * 设置cancelled事务ID
+ * @param db : mosquitto db
+ * @param mosq :mosquitto context
+ * @param payloadlen : 消息长度
+ * @param payload : 消息内容
+ * @return void
+ */
+void set_cancelled(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t payloadlen, const void *payload)
+{
+   cJSON * root = cJSON_Parse(payload);
+   if (root) {
+       char *rendered = cJSON_Print(root);
+       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
+       
+       cJSON *transaction_id = cJSON_GetObjectItem(root, "transactionID");
+       cJSON *cmd = cJSON_GetObjectItem(root, "cmd");
+       if (transaction_id && cmd) {
+           _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "CMD: %s", cmd->valuestring);
+           
+           if (strcmp(cmd->valuestring, "hangUpCall") == 0) {
+               redisReply *redis_reply;
+                redis_reply = redisCommand(db->redis_context, "HSET mqtt_cancelled %s 1", transaction_id->valuestring);
+                _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "Transaction ID: %s is  set to cancelled", transaction_id->valuestring);
+                freeReplyObject(redis_reply);
+           }
+           
+            
+       }
+   }
+   cJSON_Delete(root);
+}
+
 static void _message_remove(struct mosquitto_db *db, struct mosquitto *context, struct mosquitto_client_msg **msg, struct mosquitto_client_msg *last)
 {
 	int i;
@@ -335,6 +368,9 @@ int mqtt3_handle_publish(struct mosquitto_db *db, struct mosquitto *context)
 			_mosquitto_free(payload);
 			return 1;
 		}
+                
+                // 是否需要cancel掉
+                set_cancelled(db, context, (long)payloadlen, payload);
 	}
 
 	/* Check for topic access */
@@ -347,6 +383,9 @@ int mqtt3_handle_publish(struct mosquitto_db *db, struct mosquitto *context)
 		if(payload) _mosquitto_free(payload);
 		return rc;
 	}
+        
+         
+        
 
 	_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Received PUBLISH from %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", context->id, dup, qos, retain, mid, topic, (long)payloadlen);
 	
