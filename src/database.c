@@ -864,7 +864,7 @@ int is_cancelled(struct mosquitto_db *db, struct mosquitto *mosq, uint32_t paylo
            _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "CMD: %s", cmd->valuestring);
            
            if (strcmp(cmd->valuestring, "makeCall") == 0) {
-               if (!db->redis_context) {
+               if (db->redis_context) {
                     redisReply *redis_reply;
                     redis_reply = redisCommand(db->redis_context, "HGET mqtt_cancelled %s", transaction_id->valuestring);
                     if (redis_reply->str) {
