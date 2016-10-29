@@ -822,7 +822,7 @@ int is_expired(struct mosquitto *mosq, uint32_t payloadlen, const void *payload)
    cJSON * root = cJSON_Parse(payload);
    if (root) {
        char *rendered = cJSON_Print(root);
-       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "payload: %s", rendered);
+       _mosquitto_log_printf(mosq, MOSQ_LOG_DEBUG, "expired payload: %s", rendered);
        
        cJSON *expire_at = cJSON_GetObjectItem(root, "expiredAt");
        if (expire_at) {
@@ -924,25 +924,34 @@ int mqtt3_db_message_write(struct mosquitto_db *db, struct mosquitto *context)
 
 			switch(tail->state){
 				case mosq_ms_publish_qos0:
-					rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
-					if(!rc){
-						_message_remove(db, context, &tail, last);
-					}else{
-						return rc;
-					}
+                                        if (is_cancelled(db, context, payloadlen, payload) || is_expired(context, payloadlen, payload)) {
+                                            _message_remove(db, context, &tail, last);
+                                        } else { 
+                                            rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
+                                            if(!rc){
+                                                    _message_remove(db, context, &tail, last);
+                                            }else{
+                                                    return rc;
+                                            }
+                                        }
 					break;
 
 				case mosq_ms_publish_qos1:
-					rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
-					if(!rc){
-						tail->timestamp = mosquitto_time();
-						tail->dup = 1; /* Any retry attempts are a duplicate. */
-						tail->state = mosq_ms_wait_for_puback;
-					}else{
-						return rc;
-					}
-					last = tail;
-					tail = tail->next;
+                                        if (is_cancelled(db, context, payloadlen, payload) || is_expired(context, payloadlen, payload)) {
+                                            // 如果取消了或者过期了就移除
+                                            _message_remove(db, context, &tail, last);
+                                        } else {
+                                            rc = _mosquitto_send_publish(context, mid, topic, payloadlen, payload, qos, retain, retries);
+                                            if(!rc){
+                                                    tail->timestamp = mosquitto_time();
+                                                    tail->dup = 1; /* Any retry attempts are a duplicate. */
+                                                    tail->state = mosq_ms_wait_for_puback;
+                                            }else{
+                                                    return rc;
+                                            }
+                                            last = tail;
+                                            tail = tail->next;
+                                        }
 					break;
 
 				case mosq_ms_publish_qos2:
