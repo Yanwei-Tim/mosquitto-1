@@ -62,7 +62,7 @@ Hash里的key即MQTT的Client
 
 ## 设备在线
 
-设备在线会存储在Redis的mqtt里使用HASH存储，通过HMGET来同时获取多个设备是否在线
+设备在线会存储在Redis的mqtt键里使用HASH存储，通过HMGET来同时获取多个设备是否在线
 
 ## Redis配置
 
