@@ -25,12 +25,6 @@ Fixes: [![Travis Build Status (fixes)](https://travis-ci.org/eclipse/mosquitto.s
 
 ## 用户上下线
 
-增加用户上线下线状态，数据存储使用Redis，已经将hiredis整合在代码里。
-
-配置项：
-    
-    redis_host 127.0.0.1
-    redis_port 6379
 
 状态存放在Redis中key为mqtt，使用Hash存储
 
@@ -38,7 +32,7 @@ Fixes: [![Travis Build Status (fixes)](https://travis-ci.org/eclipse/mosquitto.s
     1) "test"
     127.0.0.1:6379> HKEYS mqtt
 
-Hash里的key即MQTT的Client
+Hash里的key即MQTT的Client, 可以通过HMGET来同时获取多个设备在线状态
 
 日志如下：
 
@@ -60,9 +54,6 @@ Hash里的key即MQTT的Client
     1472023902: Expire at: 1472023605, Current timestamp: 1472023902
     1472023902: The message has already expired!
 
-## 设备在线
-
-设备在线会存储在Redis的mqtt键里使用HASH存储，通过HMGET来同时获取多个设备是否在线
 
 ## Redis配置
 
