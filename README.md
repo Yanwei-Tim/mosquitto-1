@@ -51,13 +51,16 @@ Hash里的key即MQTT的Client
     
 ## 过期时间
 
-在传输消息中如果标注了QoS为2时，会通过获取json数据格式中expire_at字段来判断消息是否过期，如果过期的话会忽略推送消息。
+在传输消息中会通过获取json数据格式中expired_at字段来判断消息是否过期，如果过期的话会忽略推送消息。
 
     1472023902: payload: {
-    	"expire_at":	1472023605,
+    	"expired_at":	1472023605,
     	"message":	"hello!"
     }
     1472023902: Expire at: 1472023605, Current timestamp: 1472023902
     1472023902: The message has already expired!
 
+## 设备在线
+
+设备在线会存储在Redis的mqtt里使用HASH存储，通过HMGET来同时获取多个设备是否在线
 
