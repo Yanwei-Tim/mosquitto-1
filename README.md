@@ -64,3 +64,10 @@ Hash里的key即MQTT的Client
 
 设备在线会存储在Redis的mqtt里使用HASH存储，通过HMGET来同时获取多个设备是否在线
 
+## Redis配置
+
+mosquitto.conf增加了redis配置
+
+    redis_host 127.0.0.1
+    redis_port 6379
+    redis_auth doordu
