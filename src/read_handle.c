@@ -127,7 +127,7 @@ static void _message_remove(struct mosquitto_db *db, struct mosquitto *context, 
 }
 
 /**
- * 是否需要移除clientID与token绑定
+ * 是否需要移除clientID与topic绑定
  * @param db : mosquitto db
  * @param mosq
  * @param payloadlen
