@@ -55,6 +55,9 @@ int mqtt3_db_open(struct mqtt3_config *config, struct mosquitto_db *db)
 	db->subs.subs = NULL;
 	db->subs.topic = "";
 
+        /*
+         * 创建业务订阅树""
+         */
 	child = _mosquitto_malloc(sizeof(struct _mosquitto_subhier));
 	if(!child){
 		_mosquitto_log_printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
@@ -72,6 +75,9 @@ int mqtt3_db_open(struct mqtt3_config *config, struct mosquitto_db *db)
 	child->retained = NULL;
 	db->subs.children = child;
 
+        /*
+         * 系统订阅树$SYS
+         */
 	child = _mosquitto_malloc(sizeof(struct _mosquitto_subhier));
 	if(!child){
 		_mosquitto_log_printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");

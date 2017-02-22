@@ -100,6 +100,10 @@ struct _mqtt3_listener {
 #endif
 };
 
+/**
+ * 保存mosquitto的所有配置信息，mosquitto程序在启动时将初始化该结构并从
+ * 配置文件中读取配置信息保存于该结构体变量内。
+ */
 struct mqtt3_config {
 	char *config_file;
 	char *acl_file;
@@ -153,19 +157,26 @@ struct mqtt3_config {
         char *redis_auth;
 };
 
+/**
+ * 对某一topic的所有订阅者被组织成一个订阅列表，该订阅列表是一个双向链表，链表的
+ * 每个节点都保存有一个订阅者，该链表的节点即时 _mosquitto_subleaf
+ */
 struct _mosquitto_subleaf {
-	struct _mosquitto_subleaf *prev;
-	struct _mosquitto_subleaf *next;
+	struct _mosquitto_subleaf *prev;        // 前一个节点
+	struct _mosquitto_subleaf *next;        // 后一个节点
 	struct mosquitto *context;              // 表示一个订阅客户端
 	int qos;
 };
 
+/**
+ * 保存订阅树的节点（包括子节点和中间节点）
+ */
 struct _mosquitto_subhier {
-	struct _mosquitto_subhier *parent;
-	struct _mosquitto_subhier *children;
-	struct _mosquitto_subhier *next;
-	struct _mosquitto_subleaf *subs;        //该成员指向订阅列表
-	char *topic;
+	struct _mosquitto_subhier *parent;      // 上级节点
+	struct _mosquitto_subhier *children;    // 该成员指针指向同结构的第一个孩子节点
+	struct _mosquitto_subhier *next;        // 该成员指针指向该节点的下一个兄弟节点
+	struct _mosquitto_subleaf *subs;        // 该成员指向订阅列表
+	char *topic;                            // 该节点对应的topic片段
 	struct mosquitto_msg_store *retained;
 };
 
@@ -242,27 +253,31 @@ struct _mosquitto_auth_plugin{
 	int (*psk_key_get)(void *user_data, const char *hint, const char *identity, char *key, int max_key_len);
 };
 
+/**
+ * 所有内部数据的统一管理结构，类似内存数据库。
+ * 保存了所有的客户端，所有客户端的订阅关系等等。
+ */
 struct mosquitto_db{
 	dbid_t last_db_id;
-	struct _mosquitto_subhier subs;
-	struct _mosquitto_unpwd *unpwd;
+	struct _mosquitto_subhier subs;                             // 保存了订阅树的总树根
+	struct _mosquitto_unpwd *unpwd;                
 	struct _mosquitto_acl_user *acl_list;
 	struct _mosquitto_acl *acl_patterns;
 	struct _mosquitto_unpwd *psk_id;
-	struct mosquitto *contexts_by_id;
+	struct mosquitto *contexts_by_id;                           // contexts数组           
 	struct mosquitto *contexts_by_sock;
 	struct mosquitto *contexts_for_free;
 #ifdef WITH_BRIDGE
 	struct mosquitto **bridges;
 #endif
-	struct _clientid_index_hash *clientid_index_hash;
-	struct mosquitto_msg_store *msg_store;
+	struct _clientid_index_hash *clientid_index_hash;           // 该hash表可通过客户端的ID快速查找contexts           
+	struct mosquitto_msg_store *msg_store;          
 	struct mosquitto_msg_store_load *msg_store_load;
 #ifdef WITH_BRIDGE
 	int bridge_count;
 #endif
 	int msg_store_count;
-	struct mqtt3_config *config;
+	struct mqtt3_config *config;                                // 配置信息
 	int persistence_changes;
 	struct _mosquitto_auth_plugin auth_plugin;
 #ifdef WITH_SYS_TREE

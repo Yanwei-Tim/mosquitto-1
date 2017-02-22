@@ -151,20 +151,20 @@ struct mosquitto_message_all{
  * 保存一个客户端连接的所有信息，例如用户名、密码、用户ID、向该客户端发送的消息等。
  */
 struct mosquitto {
-	mosq_sock_t sock;
+	mosq_sock_t sock;                           // 与客户端连接通信所用的socket描述符
 #ifndef WITH_BROKER
 	mosq_sock_t sockpairR, sockpairW;
 #endif
-	enum _mosquitto_protocol protocol;
-	char *address;
-	char *id;
-	char *username;
-	char *password;
-	uint16_t keepalive;
+	enum _mosquitto_protocol protocol;          // 使用的MQTT版本
+	char *address;                              // 客户端的IP地址
+	char *id;                                   // client id
+	char *username;                             // 用户名
+	char *password;                             // 密码
+	uint16_t keepalive;                         // 客户端需在此时间内向服务器发送一条ping/pong消息
 	uint16_t last_mid;
 	enum mosquitto_client_state state;
-	time_t last_msg_in;
-	time_t next_msg_out;
+	time_t last_msg_in;                         // 记录上次收消息时间
+	time_t next_msg_out;                        // 记录上次发消息收件
 	time_t ping_t;
 	struct _mosquitto_packet in_packet;
 	struct _mosquitto_packet *current_out_packet;
@@ -204,7 +204,7 @@ struct mosquitto {
 	bool is_dropping;
 	bool is_bridge;
 	struct _mqtt3_bridge *bridge;
-	struct mosquitto_client_msg *msgs;
+	struct mosquitto_client_msg *msgs;              // 用于暂时存储发往该context的消息
 	struct mosquitto_client_msg *last_msg;
 	int msg_count;
 	int msg_count12;
@@ -212,7 +212,7 @@ struct mosquitto {
 	struct _mqtt3_listener *listener;
 	time_t disconnect_t;
 	struct _mosquitto_packet *out_packet_last;
-	struct _mosquitto_subhier **subs;       // 保存了订阅树的总树根
+	struct _mosquitto_subhier **subs;               // 保存了订阅树的总树根
 	int sub_count;
 	int pollfd_index;
 #  ifdef WITH_WEBSOCKETS
