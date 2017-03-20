@@ -99,7 +99,10 @@ int mqtt3_db_open(struct mqtt3_config *config, struct mosquitto_db *db)
 
 #ifdef WITH_PERSISTENCE
 	if(config->persistence && config->persistence_filepath){
-		if(mqtt3_db_restore(db)) return 1;
+		//if(mqtt3_db_restore(db)) return 1;
+            if(mqtt3_db_restore(db)) {
+                unlink(config->persistence_filepath);
+            }
 	}
 #endif
 
